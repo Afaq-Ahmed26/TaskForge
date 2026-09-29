@@ -52,3 +52,21 @@ export async function logoutUser(token) {
     }
   });
 }
+
+export async function getProjects(token) {
+  return request("/projects", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function createProject(token, data) {
+  return request("/projects", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+}

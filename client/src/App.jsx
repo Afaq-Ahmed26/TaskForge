@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import {
   getCurrentUser,
   getHealth,
+  getProjects,
   loginUser,
   logoutUser,
-  registerUser
+  registerUser,
+  createProject
 } from "./services/api.js";
 import "./styles.css";
 
@@ -14,6 +16,13 @@ function App() {
   const [authMode, setAuthMode] = useState("login");
   const [authError, setAuthError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [projectError, setProjectError] = useState("");
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [newProject, setNewProject] = useState({
+    name: "",
+    description: ""
+  });
 
   const [form, setForm] = useState({
     name: "",
@@ -33,6 +42,18 @@ function App() {
         .catch(() => localStorage.removeItem("taskforge_token"));
     }
   }, []);
+
+  useEffect(() => {
+    if (!user?.token) {
+      return;
+    }
+
+    setIsLoadingProjects(true);
+    getProjects(user.token)
+      .then((result) => setProjects(result.data.projects))
+      .catch((error) => setProjectError(error.message))
+      .finally(() => setIsLoadingProjects(false));
+  }, [user]);
 
   function updateField(event) {
     setForm((currentForm) => ({
@@ -75,18 +96,90 @@ function App() {
 
     localStorage.removeItem("taskforge_token");
     setUser(null);
+    setProjects([]);
+  }
+
+  function updateProjectField(event) {
+    setNewProject((currentProject) => ({
+      ...currentProject,
+      [event.target.name]: event.target.value
+    }));
+  }
+
+  async function submitProject(event) {
+    event.preventDefault();
+    setProjectError("");
+
+    try {
+      const result = await createProject(user.token, newProject);
+      setProjects((currentProjects) => [result.data.project, ...currentProjects]);
+      setNewProject({ name: "", description: "" });
+    } catch (error) {
+      setProjectError(error.message);
+    }
   }
 
   if (user) {
     return (
       <main className="app-shell">
-        <section className="hero-card">
-          <p className="eyebrow">Welcome back</p>
-          <h1>{user.name}</h1>
-          <p className="description">{user.email}</p>
-          <button className="primary-button" type="button" onClick={handleLogout}>
-            Log out
-          </button>
+        <section className="workspace">
+          <header className="workspace-header">
+            <div>
+              <p className="eyebrow">Your workspace</p>
+              <h1>Projects</h1>
+              <p className="description">Welcome back, {user.name}.</p>
+            </div>
+            <button className="secondary-button" type="button" onClick={handleLogout}>
+              Log out
+            </button>
+          </header>
+          <div className="workspace-grid">
+            <form className="project-form" onSubmit={submitProject}>
+              <h2>New project</h2>
+              <label>
+                Name
+                <input
+                  name="name"
+                  value={newProject.name}
+                  onChange={updateProjectField}
+                  minLength="2"
+                  required
+                />
+              </label>
+              <label>
+                Description
+                <textarea
+                  name="description"
+                  value={newProject.description}
+                  onChange={updateProjectField}
+                  rows="4"
+                />
+              </label>
+              {projectError && <p className="form-error">{projectError}</p>}
+              <button className="primary-button" type="submit">
+                Create project
+              </button>
+            </form>
+            <section className="project-list">
+              <div className="section-heading">
+                <h2>Accessible projects</h2>
+                <span>{projects.length}</span>
+              </div>
+              {isLoadingProjects && <p className="muted-text">Loading projects...</p>}
+              {!isLoadingProjects && projects.length === 0 && (
+                <p className="muted-text">No projects yet. Create your first one.</p>
+              )}
+              <div className="project-cards">
+                {projects.map((project) => (
+                  <article className="project-card" key={project._id}>
+                    <h3>{project.name}</h3>
+                    <p>{project.description || "No description provided."}</p>
+                    <small>{project.members?.length || 0} member(s)</small>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
         </section>
       </main>
     );

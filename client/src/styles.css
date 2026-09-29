@@ -153,8 +153,141 @@ h1 {
   opacity: 0.65;
 }
 
+.workspace {
+  width: min(100%, 1100px);
+}
+
+.workspace-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.workspace-header h1 {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+}
+
+.workspace-header .description {
+  margin: 12px 0 0;
+}
+
+.secondary-button {
+  border: 1px solid #405275;
+  border-radius: 10px;
+  padding: 11px 16px;
+  color: #d5def0;
+  background: #111c35;
+  cursor: pointer;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(0, 1.5fr);
+  gap: 24px;
+}
+
+.project-form,
+.project-list {
+  border: 1px solid #344568;
+  border-radius: 18px;
+  padding: 24px;
+  background: rgba(16, 25, 49, 0.88);
+}
+
+.project-form {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.project-form h2,
+.project-list h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.project-form label {
+  display: grid;
+  gap: 8px;
+  color: #c3cee2;
+  font-size: 0.9rem;
+}
+
+.project-form input,
+.project-form textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #405275;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #e7edf7;
+  background: #111c35;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.section-heading span {
+  display: grid;
+  min-width: 28px;
+  min-height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: #10182c;
+  background: #8da9ff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.muted-text {
+  color: #8e9db8;
+}
+
+.project-cards {
+  display: grid;
+  gap: 12px;
+}
+
+.project-card {
+  border: 1px solid #344568;
+  border-radius: 12px;
+  padding: 16px;
+  background: #111c35;
+}
+
+.project-card h3 {
+  margin: 0 0 8px;
+}
+
+.project-card p {
+  margin: 0 0 14px;
+  color: #aebbd4;
+  line-height: 1.5;
+}
+
+.project-card small {
+  color: #8e9db8;
+}
+
 .form-error {
   margin: 0;
   color: #ff9f9f;
   font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+  .workspace-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
 }
