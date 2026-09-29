@@ -7,6 +7,8 @@ import {
   logoutUser,
   registerUser,
   createProject,
+  updateProject,
+  deleteProject,
   createIssue,
   addIssueComment,
   getIssueActivity,
@@ -35,6 +37,7 @@ function App() {
     name: "",
     description: ""
   });
+  const [editingProject, setEditingProject] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [issues, setIssues] = useState([]);
   const [issueError, setIssueError] = useState("");
@@ -184,6 +187,65 @@ function App() {
     } catch (error) {
       setProjectError(error.message);
     }
+
+    function startProjectEdit() {
+      setNewProject({
+        name: selectedProject.name,
+        description: selectedProject.description || ""
+      });
+      setEditingProject(true);
+      setProjectError("");
+    }
+
+    function cancelProjectEdit() {
+      setEditingProject(false);
+      setNewProject({ name: "", description: "" });
+      setProjectError("");
+    }
+
+    async function saveProject(event) {
+      event.preventDefault();
+      setProjectError("");
+
+      try {
+        const result = await updateProject(
+          user.token,
+          selectedProject._id,
+          newProject
+        );
+        const updatedProject = {
+          ...selectedProject,
+          ...result.data.project
+        };
+        setProjects((currentProjects) =>
+          currentProjects.map((project) =>
+            project._id === updatedProject._id ? updatedProject : project
+          )
+        );
+        setSelectedProject(updatedProject);
+        cancelProjectEdit();
+      } catch (error) {
+        setProjectError(error.message);
+      }
+    }
+
+    async function removeProject() {
+      if (!window.confirm("Delete this project and its access?")) {
+        return;
+      }
+
+      try {
+        await deleteProject(user.token, selectedProject._id);
+        setProjects((currentProjects) =>
+          currentProjects.filter((project) => project._id !== selectedProject._id)
+        );
+        setSelectedProject(null);
+        setIssues([]);
+        setDashboard(null);
+      } catch (error) {
+        setProjectError(error.message);
+      }
+    }
   }
 
   function updateIssueField(event) {
@@ -221,41 +283,41 @@ function App() {
     } catch (error) {
       setIssueError(error.message);
     }
+  }
 
-    async function changePriority(issueId, priority) {
-      try {
-        const result = await updateIssuePriority(user.token, issueId, priority);
-        setIssues((currentIssues) =>
-          currentIssues.map((issue) =>
-            issue._id === issueId ? result.data.issue : issue
-          )
-        );
-      } catch (error) {
-        setIssueError(error.message);
-      }
+  async function changePriority(issueId, priority) {
+    try {
+      const result = await updateIssuePriority(user.token, issueId, priority);
+      setIssues((currentIssues) =>
+        currentIssues.map((issue) =>
+          issue._id === issueId ? result.data.issue : issue
+        )
+      );
+    } catch (error) {
+      setIssueError(error.message);
+    }
+  }
+
+  async function removeIssue(issueId) {
+    if (!window.confirm("Delete this issue?")) {
+      return;
     }
 
-    async function removeIssue(issueId) {
-      if (!window.confirm("Delete this issue?")) {
-        return;
-      }
-
-      try {
-        await deleteIssue(user.token, issueId);
-        setIssues((currentIssues) =>
-          currentIssues.filter((issue) => issue._id !== issueId)
-        );
-      } catch (error) {
-        setIssueError(error.message);
-      }
+    try {
+      await deleteIssue(user.token, issueId);
+      setIssues((currentIssues) =>
+        currentIssues.filter((issue) => issue._id !== issueId)
+      );
+    } catch (error) {
+      setIssueError(error.message);
     }
+  }
 
-    function updateIssueFilter(event) {
-      setIssueFilters((currentFilters) => ({
-        ...currentFilters,
-        [event.target.name]: event.target.value
-      }));
-    }
+  function updateIssueFilter(event) {
+    setIssueFilters((currentFilters) => ({
+      ...currentFilters,
+      [event.target.name]: event.target.value
+    }));
   }
 
   async function toggleIssueDetails(issueId) {
@@ -292,57 +354,6 @@ function App() {
       return;
     }
 
-    async function addMember() {
-      if (!selectedProject || !selectedMemberId) {
-        return;
-      }
-
-      setMemberError("");
-
-      try {
-        const result = await addProjectMember(
-          user.token,
-          selectedProject._id,
-          selectedMemberId
-        );
-        const updatedProject = result.data.project;
-        setProjects((currentProjects) =>
-          currentProjects.map((project) =>
-            project._id === updatedProject._id ? updatedProject : project
-          )
-        );
-        setSelectedProject(updatedProject);
-        setSelectedMemberId("");
-      } catch (error) {
-        setMemberError(error.message);
-      }
-    }
-
-    async function removeMember(userId) {
-      if (!selectedProject) {
-        return;
-      }
-
-      setMemberError("");
-
-      try {
-        const result = await removeProjectMember(
-          user.token,
-          selectedProject._id,
-          userId
-        );
-        const updatedProject = result.data.project;
-        setProjects((currentProjects) =>
-          currentProjects.map((project) =>
-            project._id === updatedProject._id ? updatedProject : project
-          )
-        );
-        setSelectedProject(updatedProject);
-      } catch (error) {
-        setMemberError(error.message);
-      }
-    }
-
     try {
       const result = await addIssueComment(
         user.token,
@@ -374,6 +385,57 @@ function App() {
     }
   }
 
+  async function addMember() {
+    if (!selectedProject || !selectedMemberId) {
+      return;
+    }
+
+    setMemberError("");
+
+    try {
+      const result = await addProjectMember(
+        user.token,
+        selectedProject._id,
+        selectedMemberId
+      );
+      const updatedProject = result.data.project;
+      setProjects((currentProjects) =>
+        currentProjects.map((project) =>
+          project._id === updatedProject._id ? updatedProject : project
+        )
+      );
+      setSelectedProject(updatedProject);
+      setSelectedMemberId("");
+    } catch (error) {
+      setMemberError(error.message);
+    }
+  }
+
+  async function removeMember(userId) {
+    if (!selectedProject) {
+      return;
+    }
+
+    setMemberError("");
+
+    try {
+      const result = await removeProjectMember(
+        user.token,
+        selectedProject._id,
+        userId
+      );
+      const updatedProject = result.data.project;
+      setProjects((currentProjects) =>
+        currentProjects.map((project) =>
+          project._id === updatedProject._id ? updatedProject : project
+        )
+      );
+      setSelectedProject(updatedProject);
+    } catch (error) {
+      setMemberError(error.message);
+    }
+  }
+
   if (user) {
     return (
       <main className="app-shell">
@@ -389,8 +451,11 @@ function App() {
             </button>
           </header>
           <div className="workspace-grid">
-            <form className="project-form" onSubmit={submitProject}>
-              <h2>New project</h2>
+            <form
+              className="project-form"
+              onSubmit={editingProject ? saveProject : submitProject}
+            >
+              <h2>{editingProject ? "Edit project" : "New project"}</h2>
               <label>
                 Name
                 <input
@@ -412,8 +477,17 @@ function App() {
               </label>
               {projectError && <p className="form-error">{projectError}</p>}
               <button className="primary-button" type="submit">
-                Create project
+                {editingProject ? "Save changes" : "Create project"}
               </button>
+              {editingProject && (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={cancelProjectEdit}
+                >
+                  Cancel
+                </button>
+              )}
             </form>
             <section className="project-list">
               <div className="section-heading">
@@ -452,13 +526,33 @@ function App() {
                     Select a status to move an issue across the board.
                   </p>
                 </div>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => setSelectedProject(null)}
-                >
-                  Close
-                </button>
+                <div className="project-actions">
+                  {selectedProject.owner?._id === user.id && (
+                    <>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={startProjectEdit}
+                      >
+                        Edit project
+                      </button>
+                      <button
+                        className="danger-button"
+                        type="button"
+                        onClick={removeProject}
+                      >
+                        Delete project
+                      </button>
+                    </>
+                  )}
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => setSelectedProject(null)}
+                  >
+                    Close
+                  </button>
+                </div>
               </header>
               {dashboard && (
                 <div className="dashboard-stats">

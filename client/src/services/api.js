@@ -72,6 +72,25 @@ export async function createProject(token, data) {
   });
 }
 
+export async function updateProject(token, projectId, data) {
+  return request(`/projects/${projectId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function deleteProject(token, projectId) {
+  return request(`/projects/${projectId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function getProjectIssues(token, projectId, filters = {}) {
   const query = new URLSearchParams(
     Object.entries(filters).filter(([, value]) => value)
