@@ -83,11 +83,13 @@ test("creates a project and issue", async () => {
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({
       title: "API test issue",
-      priority: "HIGH"
+      priority: "HIGH",
+      assignee: userId
     })
   });
   assert.equal(issueResult.response.status, 201);
   issueId = issueResult.body.data.issue._id;
+  assert.equal(issueResult.body.data.issue.assignee._id, userId);
 });
 
 test("updates issue status and returns dashboard statistics", async () => {

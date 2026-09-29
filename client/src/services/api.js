@@ -134,6 +134,16 @@ export async function updateIssuePriority(token, issueId, priority) {
   });
 }
 
+export async function updateIssueAssignee(token, issueId, assignee) {
+  return request(`/issues/${issueId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ assignee: assignee || null })
+  });
+}
+
 export async function deleteIssue(token, issueId) {
   return request(`/issues/${issueId}`, {
     method: "DELETE",

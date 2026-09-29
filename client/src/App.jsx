@@ -20,6 +20,7 @@ import {
   removeProjectMember,
   updateIssueStatus,
   updateIssuePriority,
+  updateIssueAssignee as updateIssueAssigneeRequest,
   deleteIssue
 } from "./services/api.js";
 import "./styles.css";
@@ -49,7 +50,8 @@ function App() {
   const [newIssue, setNewIssue] = useState({
     title: "",
     description: "",
-    priority: "MEDIUM"
+    priority: "MEDIUM",
+    assignee: ""
   });
   const [issueFilters, setIssueFilters] = useState({
     search: "",
@@ -60,6 +62,10 @@ function App() {
   const [expandedIssueId, setExpandedIssueId] = useState(null);
   const [issueDetails, setIssueDetails] = useState({});
   const [commentDraft, setCommentDraft] = useState("");
+
+  function getOwnerId(project) {
+    return project?.owner?._id || project?.owner;
+  }
 
   const [form, setForm] = useState({
     name: "",
@@ -266,7 +272,12 @@ function App() {
         newIssue
       );
       setIssues((currentIssues) => [result.data.issue, ...currentIssues]);
-      setNewIssue({ title: "", description: "", priority: "MEDIUM" });
+      setNewIssue({
+        title: "",
+        description: "",
+        priority: "MEDIUM",
+        assignee: ""
+      });
     } catch (error) {
       setIssueError(error.message);
     }
@@ -295,6 +306,23 @@ function App() {
       );
     } catch (error) {
       setIssueError(error.message);
+    }
+
+    async function updateIssueAssignee(issueId, assignee) {
+      try {
+        const result = await updateIssueAssigneeRequest(
+          user.token,
+          issueId,
+          assignee
+        );
+        setIssues((currentIssues) =>
+          currentIssues.map((issue) =>
+            issue._id === issueId ? result.data.issue : issue
+          )
+        );
+      } catch (error) {
+        setIssueError(error.message);
+      }
     }
   }
 
@@ -615,7 +643,7 @@ function App() {
                         <strong>{member.name}</strong>
                         <small>{member.email}</small>
                       </span>
-                      {member._id !== selectedProject.owner?._id && (
+                      {member._id !== getOwnerId(selectedProject) && (
                         <button
                           className="remove-button"
                           type="button"
@@ -652,6 +680,18 @@ function App() {
                   <option value="MEDIUM">Medium</option>
                   <option value="HIGH">High</option>
                   <option value="URGENT">Urgent</option>
+                </select>
+                <select
+                  name="assignee"
+                  value={newIssue.assignee}
+                  onChange={updateIssueField}
+                >
+                  <option value="">Unassigned</option>
+                  {selectedProject.members?.map((member) => (
+                    <option value={member._id} key={member._id}>
+                      {member.name}
+                    </option>
+                  ))}
                 </select>
                 <button className="primary-button" type="submit">
                   Add issue
@@ -737,6 +777,19 @@ function App() {
                                 <option value="MEDIUM">Medium</option>
                                 <option value="HIGH">High</option>
                                 <option value="URGENT">Urgent</option>
+                              </select>
+                              <select
+                                value={issue.assignee?._id || issue.assignee || ""}
+                                onChange={(event) =>
+                                  updateIssueAssignee(issue._id, event.target.value)
+                                }
+                              >
+                                <option value="">Unassigned</option>
+                                {selectedProject.members?.map((member) => (
+                                  <option value={member._id} key={member._id}>
+                                    Assign to {member.name}
+                                  </option>
+                                ))}
                               </select>
                               <button
                                 className="remove-button issue-delete"
