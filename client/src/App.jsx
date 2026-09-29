@@ -7,6 +7,9 @@ import {
   logoutUser,
   registerUser,
   createProject
+  , createIssue,
+  getProjectIssues,
+  updateIssueStatus
 } from "./services/api.js";
 import "./styles.css";
 
@@ -22,6 +25,15 @@ function App() {
   const [newProject, setNewProject] = useState({
     name: "",
     description: ""
+  });
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [issues, setIssues] = useState([]);
+  const [issueError, setIssueError] = useState("");
+  const [isLoadingIssues, setIsLoadingIssues] = useState(false);
+  const [newIssue, setNewIssue] = useState({
+    title: "",
+    description: "",
+    priority: "MEDIUM"
   });
 
   const [form, setForm] = useState({
@@ -54,6 +66,19 @@ function App() {
       .catch((error) => setProjectError(error.message))
       .finally(() => setIsLoadingProjects(false));
   }, [user]);
+
+  useEffect(() => {
+    if (!user?.token || !selectedProject) {
+      return;
+    }
+
+    setIsLoadingIssues(true);
+    setIssueError("");
+    getProjectIssues(user.token, selectedProject._id)
+      .then((result) => setIssues(result.data.issues))
+      .catch((error) => setIssueError(error.message))
+      .finally(() => setIsLoadingIssues(false));
+  }, [user, selectedProject]);
 
   function updateField(event) {
     setForm((currentForm) => ({
@@ -97,6 +122,8 @@ function App() {
     localStorage.removeItem("taskforge_token");
     setUser(null);
     setProjects([]);
+    setSelectedProject(null);
+    setIssues([]);
   }
 
   function updateProjectField(event) {
@@ -116,6 +143,43 @@ function App() {
       setNewProject({ name: "", description: "" });
     } catch (error) {
       setProjectError(error.message);
+    }
+
+    function updateIssueField(event) {
+      setNewIssue((currentIssue) => ({
+        ...currentIssue,
+        [event.target.name]: event.target.value
+      }));
+    }
+
+    async function submitIssue(event) {
+      event.preventDefault();
+      setIssueError("");
+
+      try {
+        const result = await createIssue(
+          user.token,
+          selectedProject._id,
+          newIssue
+        );
+        setIssues((currentIssues) => [result.data.issue, ...currentIssues]);
+        setNewIssue({ title: "", description: "", priority: "MEDIUM" });
+      } catch (error) {
+        setIssueError(error.message);
+      }
+    }
+
+    async function changeStatus(issueId, status) {
+      try {
+        const result = await updateIssueStatus(user.token, issueId, status);
+        setIssues((currentIssues) =>
+          currentIssues.map((issue) =>
+            issue._id === issueId ? result.data.issue : issue
+          )
+        );
+      } catch (error) {
+        setIssueError(error.message);
+      }
     }
   }
 
@@ -171,7 +235,15 @@ function App() {
               )}
               <div className="project-cards">
                 {projects.map((project) => (
-                  <article className="project-card" key={project._id}>
+                  <article
+                    className={
+                      selectedProject?._id === project._id
+                        ? "project-card selected"
+                        : "project-card"
+                    }
+                    key={project._id}
+                    onClick={() => setSelectedProject(project)}
+                  >
                     <h3>{project.name}</h3>
                     <p>{project.description || "No description provided."}</p>
                     <small>{project.members?.length || 0} member(s)</small>
@@ -180,6 +252,96 @@ function App() {
               </div>
             </section>
           </div>
+          {selectedProject && (
+            <section className="issue-workspace">
+              <header className="section-heading">
+                <div>
+                  <h2>{selectedProject.name} issues</h2>
+                  <p className="muted-text">
+                    Select a status to move an issue across the board.
+                  </p>
+                </div>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setSelectedProject(null)}
+                >
+                  Close
+                </button>
+              </header>
+              <form className="issue-form" onSubmit={submitIssue}>
+                <input
+                  name="title"
+                  placeholder="Issue title"
+                  value={newIssue.title}
+                  onChange={updateIssueField}
+                  minLength="2"
+                  required
+                />
+                <input
+                  name="description"
+                  placeholder="Short description"
+                  value={newIssue.description}
+                  onChange={updateIssueField}
+                />
+                <select
+                  name="priority"
+                  value={newIssue.priority}
+                  onChange={updateIssueField}
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
+                </select>
+                <button className="primary-button" type="submit">
+                  Add issue
+                </button>
+              </form>
+              {issueError && <p className="form-error">{issueError}</p>}
+              {isLoadingIssues ? (
+                <p className="muted-text">Loading issues...</p>
+              ) : (
+                <div className="kanban-board">
+                  {["TODO", "IN_PROGRESS", "DONE"].map((status) => (
+                    <section className="kanban-column" key={status}>
+                      <div className="column-heading">
+                        <h3>{status.replace("_", " ")}</h3>
+                        <span>
+                          {issues.filter((issue) => issue.status === status).length}
+                        </span>
+                      </div>
+                      <div className="issue-cards">
+                        {issues
+                          .filter((issue) => issue.status === status)
+                          .map((issue) => (
+                            <article className="issue-card" key={issue._id}>
+                              <div className="issue-card-header">
+                                <h4>{issue.title}</h4>
+                                <span className={`priority ${issue.priority.toLowerCase()}`}>
+                                  {issue.priority}
+                                </span>
+                              </div>
+                              <p>{issue.description || "No description."}</p>
+                              <select
+                                value={issue.status}
+                                onChange={(event) =>
+                                  changeStatus(issue._id, event.target.value)
+                                }
+                              >
+                                <option value="TODO">Todo</option>
+                                <option value="IN_PROGRESS">In progress</option>
+                                <option value="DONE">Done</option>
+                              </select>
+                            </article>
+                          ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </section>
       </main>
     );

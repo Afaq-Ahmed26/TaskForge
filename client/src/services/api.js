@@ -70,3 +70,36 @@ export async function createProject(token, data) {
     body: JSON.stringify(data)
   });
 }
+
+export async function getProjectIssues(token, projectId, filters = {}) {
+  const query = new URLSearchParams(
+    Object.entries(filters).filter(([, value]) => value)
+  );
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  return request(`/projects/${projectId}/issues${suffix}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function createIssue(token, projectId, data) {
+  return request(`/projects/${projectId}/issues`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateIssueStatus(token, issueId, status) {
+  return request(`/issues/${issueId}/status`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ status })
+  });
+}

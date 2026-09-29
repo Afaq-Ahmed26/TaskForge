@@ -259,6 +259,11 @@ h1 {
   border-radius: 12px;
   padding: 16px;
   background: #111c35;
+  cursor: pointer;
+}
+
+.project-card.selected {
+  border-color: #8da9ff;
 }
 
 .project-card h3 {
@@ -275,6 +280,115 @@ h1 {
   color: #8e9db8;
 }
 
+.issue-workspace {
+  margin-top: 24px;
+  border: 1px solid #344568;
+  border-radius: 18px;
+  padding: 24px;
+  background: rgba(16, 25, 49, 0.88);
+}
+
+.issue-workspace .section-heading {
+  align-items: flex-start;
+}
+
+.issue-workspace .section-heading p {
+  margin: 8px 0 0;
+}
+
+.issue-form {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 140px auto;
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.issue-form input,
+.issue-form select,
+.issue-card select {
+  min-width: 0;
+  border: 1px solid #405275;
+  border-radius: 10px;
+  padding: 11px 12px;
+  color: #e7edf7;
+  background: #111c35;
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.kanban-column {
+  min-height: 220px;
+  border: 1px solid #2d3e61;
+  border-radius: 14px;
+  padding: 14px;
+  background: #0d172d;
+}
+
+.column-heading,
+.issue-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.column-heading h3 {
+  margin: 0;
+  color: #cbd7ed;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.column-heading span {
+  color: #8e9db8;
+  font-size: 0.85rem;
+}
+
+.issue-cards {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.issue-card {
+  border: 1px solid #344568;
+  border-radius: 12px;
+  padding: 14px;
+  background: #111c35;
+}
+
+.issue-card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.issue-card p {
+  margin: 12px 0;
+  color: #aebbd4;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.priority {
+  color: #8e9db8;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.priority.high,
+.priority.urgent {
+  color: #ff9f9f;
+}
+
+.priority.medium {
+  color: #f6cd7b;
+}
+
 .form-error {
   margin: 0;
   color: #ff9f9f;
@@ -288,6 +402,11 @@ h1 {
   }
 
   .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .issue-form,
+  .kanban-board {
     grid-template-columns: 1fr;
   }
 }
