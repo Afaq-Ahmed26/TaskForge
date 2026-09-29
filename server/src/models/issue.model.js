@@ -47,6 +47,10 @@ const issueSchema = new mongoose.Schema(
     dueDate: {
       type: Date,
       default: null
+    },
+    completedAt: {
+      type: Date,
+      default: null
     }
   },
   {
@@ -59,4 +63,3 @@ issueSchema.index({ project: 1, priority: 1 });
 issueSchema.index({ project: 1, assignee: 1 });
 
 export const Issue = mongoose.model("Issue", issueSchema);
-

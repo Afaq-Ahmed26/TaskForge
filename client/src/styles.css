@@ -339,6 +339,34 @@ h1 {
   margin: 22px 0;
 }
 
+.analytics-panel {
+  margin: 22px 0;
+  border: 1px solid #4b5f91;
+  border-radius: 12px;
+  padding: 16px;
+  background: #101d39;
+}
+
+.analytics-panel .section-heading {
+  margin-bottom: 14px;
+}
+
+.analytics-panel h3 {
+  margin: 0;
+  color: #d5def0;
+  font-size: 1rem;
+}
+
+.analytics-panel .section-heading p {
+  margin: 6px 0 0;
+}
+
+.analytics-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .stat-card {
   display: grid;
   gap: 6px;
@@ -595,6 +623,7 @@ h1 {
   .issue-form,
   .kanban-board,
   .dashboard-stats,
+  .analytics-stats,
   .issue-filters {
     grid-template-columns: 1fr;
   }

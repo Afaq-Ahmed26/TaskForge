@@ -39,6 +39,8 @@ Create `server/.env` locally:
 PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/taskforge
 JWT_SECRET=use-a-long-random-local-secret
+ANALYTICS_SERVICE_URL=http://127.0.0.1:8000
+ANALYTICS_TIMEOUT_MS=3000
 ```
 
 Then run:
@@ -50,6 +52,10 @@ npm start
 ```
 
 The API is available at `http://localhost:5000/api`.
+
+The backend calls FastAPI at `ANALYTICS_SERVICE_URL`; React calls only the
+backend. The basic project dashboard remains available if analytics is
+unavailable.
 
 ### Frontend
 
@@ -78,6 +84,8 @@ Services:
 - Analytics: `http://localhost:8000`
 
 The Compose configuration intentionally uses `mongo:4.4`. Do not upgrade it to MongoDB 5.0 or newer on this machine.
+Inside Compose, the backend reaches analytics through
+`http://analytics:8000`.
 
 ## Tests
 
@@ -100,6 +108,12 @@ Frontend production build:
 ```bash
 cd client
 npm run build
+```
+
+FastAPI direct tests:
+
+```bash
+python3 -m unittest discover analytics
 ```
 
 ## Security

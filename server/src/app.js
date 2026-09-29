@@ -1,5 +1,6 @@
 import express from "express";
 import activityRoutes from "./routes/activity.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import commentRoutes from "./routes/comment.routes.js";
 import issueRoutes from "./routes/issue.routes.js";
@@ -21,6 +22,7 @@ app.get("/api/health", (_request, response) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/projects", analyticsRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/projects", issueRoutes);
 app.use("/api/issues", issueRoutes);
@@ -37,6 +39,13 @@ app.use((_request, response) => {
 
 app.use((error, _request, response, _next) => {
   console.error(error);
+
+  if (error.statusCode) {
+    return response.status(error.statusCode).json({
+      success: false,
+      message: error.message
+    });
+  }
 
   response.status(500).json({
     success: false,

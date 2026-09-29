@@ -14,6 +14,7 @@ let token;
 let projectId;
 let issueId;
 let userId;
+let otherUserId;
 const testEmail = `api-test-${Date.now()}@example.com`;
 
 async function request(path, options = {}) {
@@ -39,6 +40,7 @@ after(async () => {
   await Issue.deleteMany({ creator: userId });
   await Project.deleteMany({ owner: userId });
   await User.deleteOne({ _id: userId });
+  await User.deleteOne({ _id: otherUserId });
   await new Promise((resolve, reject) =>
     server.close((error) => (error ? reject(error) : resolve()))
   );
@@ -99,6 +101,7 @@ test("updates issue status and returns dashboard statistics", async () => {
     body: JSON.stringify({ status: "DONE" })
   });
   assert.equal(statusResult.response.status, 200);
+  assert.ok(statusResult.body.data.issue.completedAt);
 
   const dashboardResult = await request(`/api/projects/${projectId}/dashboard`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -106,6 +109,70 @@ test("updates issue status and returns dashboard statistics", async () => {
   assert.equal(dashboardResult.response.status, 200);
   assert.equal(dashboardResult.body.data.completedIssues, 1);
   assert.equal(dashboardResult.body.data.completionRate, 100);
+});
+
+test("returns authorized FastAPI analytics through Node", async () => {
+  const originalFetch = globalThis.fetch;
+  let analyticsRequest;
+  let analyticsCallCount = 0;
+
+  globalThis.fetch = async (url, options) => {
+    if (url.startsWith(`http://127.0.0.1:${server.address().port}`)) {
+      return originalFetch(url, options);
+    }
+
+    analyticsCallCount += 1;
+    analyticsRequest = JSON.parse(options.body);
+    return Response.json({
+      success: true,
+      data: {
+        source: "fastapi",
+        projectId,
+        completionRate: 100,
+        totalIssues: 1,
+        completedIssues: 1,
+        overdueIssues: 0,
+        averageCompletionTime: 0.08,
+        priorityDistribution: { HIGH: 1 }
+      }
+    });
+  };
+
+  try {
+    const result = await request(`/api/projects/${projectId}/analytics`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    assert.equal(result.response.status, 200);
+    assert.equal(result.body.data.analytics.source, "fastapi");
+    assert.equal(result.body.data.analytics.completedIssues, 1);
+    assert.equal(analyticsRequest.projectId, projectId);
+    assert.deepEqual(Object.keys(analyticsRequest.issues[0]).sort(), [
+      "completedAt",
+      "createdAt",
+      "dueDate",
+      "priority",
+      "status"
+    ]);
+
+    const otherUserResult = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Other API User",
+        email: `api-test-other-${Date.now()}@example.com`,
+        password: "ApiTest123!"
+      })
+    });
+    otherUserId = otherUserResult.body.data.user.id;
+    const deniedResult = await request(`/api/projects/${projectId}/analytics`, {
+      headers: { Authorization: `Bearer ${otherUserResult.body.data.token}` }
+    });
+
+    assert.equal(deniedResult.response.status, 404);
+    assert.equal(analyticsCallCount, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("creates a comment and records activity", async () => {

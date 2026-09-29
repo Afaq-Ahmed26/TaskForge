@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import {
   createIssue,
+  getProjectAnalytics,
   getProjectIssues,
   loginUser
 } from "../src/services/api.js";
@@ -83,3 +84,37 @@ test("createIssue exposes API error messages", async () => {
   );
 });
 
+test("getProjectAnalytics requests Node analytics with bearer authentication", async () => {
+  let capturedRequest;
+
+  globalThis.fetch = async (url, options) => {
+    capturedRequest = { url, options };
+    return Response.json({
+      success: true,
+      data: {
+        analytics: {
+          source: "fastapi",
+          projectId: "project-id",
+          completionRate: 50,
+          totalIssues: 2,
+          completedIssues: 1,
+          overdueIssues: 1,
+          averageCompletionTime: null,
+          priorityDistribution: {}
+        }
+      }
+    });
+  };
+
+  const result = await getProjectAnalytics("token-value", "project-id");
+
+  assert.equal(
+    capturedRequest.url,
+    "http://localhost:5000/api/projects/project-id/analytics"
+  );
+  assert.equal(
+    capturedRequest.options.headers.Authorization,
+    "Bearer token-value"
+  );
+  assert.equal(result.data.analytics.source, "fastapi");
+});

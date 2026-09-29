@@ -13,6 +13,7 @@ import {
   addIssueComment,
   getIssueActivity,
   getIssueComments,
+  getProjectAnalytics,
   getProjectDashboard,
   getProjectIssues,
   getUsers,
@@ -44,6 +45,9 @@ function App() {
   const [issueError, setIssueError] = useState("");
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
   const [dashboard, setDashboard] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsError, setAnalyticsError] = useState("");
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const [users, setUsers] = useState([]);
   const [memberError, setMemberError] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState("");
@@ -127,6 +131,20 @@ function App() {
       .finally(() => setIsLoadingIssues(false));
   }, [user, selectedProject, issueFilters]);
 
+  useEffect(() => {
+    if (!user?.token || !selectedProject) {
+      return;
+    }
+
+    setAnalytics(null);
+    setAnalyticsError("");
+    setIsLoadingAnalytics(true);
+    getProjectAnalytics(user.token, selectedProject._id)
+      .then((result) => setAnalytics(result.data.analytics))
+      .catch((error) => setAnalyticsError(error.message))
+      .finally(() => setIsLoadingAnalytics(false));
+  }, [user, selectedProject]);
+
   function updateField(event) {
     setForm((currentForm) => ({
       ...currentForm,
@@ -172,6 +190,8 @@ function App() {
     setSelectedProject(null);
     setIssues([]);
     setDashboard(null);
+    setAnalytics(null);
+    setAnalyticsError("");
     setSelectedMemberId("");
   }
 
@@ -307,22 +327,22 @@ function App() {
     } catch (error) {
       setIssueError(error.message);
     }
+  }
 
-    async function updateIssueAssignee(issueId, assignee) {
-      try {
-        const result = await updateIssueAssigneeRequest(
-          user.token,
-          issueId,
-          assignee
-        );
-        setIssues((currentIssues) =>
-          currentIssues.map((issue) =>
-            issue._id === issueId ? result.data.issue : issue
-          )
-        );
-      } catch (error) {
-        setIssueError(error.message);
-      }
+  async function updateIssueAssignee(issueId, assignee) {
+    try {
+      const result = await updateIssueAssigneeRequest(
+        user.token,
+        issueId,
+        assignee
+      );
+      setIssues((currentIssues) =>
+        currentIssues.map((issue) =>
+          issue._id === issueId ? result.data.issue : issue
+        )
+      );
+    } catch (error) {
+      setIssueError(error.message);
     }
   }
 
@@ -602,6 +622,52 @@ function App() {
                   </div>
                 </div>
               )}
+              <section className="analytics-panel">
+                <div className="section-heading">
+                  <div>
+                    <h3>FastAPI Analytics</h3>
+                    <p className="muted-text">
+                      Specialized metrics calculated by the analytics service.
+                    </p>
+                  </div>
+                </div>
+                {isLoadingAnalytics && (
+                  <p className="muted-text">Loading analytics...</p>
+                )}
+                {analyticsError && (
+                  <p className="form-error">
+                    Analytics unavailable: {analyticsError}
+                  </p>
+                )}
+                {analytics && (
+                  <div className="analytics-stats">
+                    <div className="stat-card">
+                      <span>Completion rate</span>
+                      <strong>{analytics.completionRate}%</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>Average completion time</span>
+                      <strong>
+                        {analytics.averageCompletionTime === null
+                          ? "—"
+                          : `${analytics.averageCompletionTime} days`}
+                      </strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>Overdue issues</span>
+                      <strong>{analytics.overdueIssues}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>Priority distribution</span>
+                      <strong>
+                        {Object.entries(analytics.priorityDistribution)
+                          .map(([priority, count]) => `${priority}: ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+              </section>
               <section className="members-panel">
                 <div className="section-heading">
                   <h3>Project members</h3>

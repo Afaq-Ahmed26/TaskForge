@@ -21,6 +21,12 @@ class ProjectAnalyticsRequest(BaseModel):
     issues: list[Issue] = Field(default_factory=list)
 
 
+def as_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {"success": True, "data": {"service": "taskforge-analytics", "status": "ok"}}
@@ -34,7 +40,9 @@ def project_analytics(payload: ProjectAnalyticsRequest) -> dict[str, Any]:
     overdue_issues = [
         issue
         for issue in issues
-        if issue.status != "DONE" and issue.dueDate and issue.dueDate < now
+        if issue.status != "DONE"
+        and issue.dueDate
+        and as_utc(issue.dueDate) < now
     ]
 
     completion_rate = (
@@ -43,7 +51,10 @@ def project_analytics(payload: ProjectAnalyticsRequest) -> dict[str, Any]:
         else 0
     )
     completion_times = [
-        (issue.completedAt - issue.createdAt).total_seconds() / 86400
+        (
+            as_utc(issue.completedAt) - as_utc(issue.createdAt)
+        ).total_seconds()
+        / 86400
         for issue in completed_issues
         if issue.createdAt and issue.completedAt
     ]
@@ -56,6 +67,7 @@ def project_analytics(payload: ProjectAnalyticsRequest) -> dict[str, Any]:
     return {
         "success": True,
         "data": {
+            "source": "fastapi",
             "projectId": payload.projectId,
             "completionRate": completion_rate,
             "totalIssues": len(issues),
@@ -65,4 +77,3 @@ def project_analytics(payload: ProjectAnalyticsRequest) -> dict[str, Any]:
             "priorityDistribution": dict(Counter(issue.priority for issue in issues)),
         },
     }
-

@@ -102,6 +102,16 @@ function applyIssueFields(issue, body) {
   if (assignee !== undefined) issue.assignee = assignee;
 }
 
+function updateCompletedAt(issue, previousStatus = issue.status) {
+  if (issue.status === "DONE" && previousStatus !== "DONE") {
+    issue.completedAt = new Date();
+  } else if (issue.status !== "DONE" && previousStatus === "DONE") {
+    issue.completedAt = null;
+  } else if (issue.status === "DONE" && !issue.completedAt) {
+    issue.completedAt = new Date();
+  }
+}
+
 async function populateIssue(issue) {
   await issue.populate([
     { path: "project", select: "name owner members" },
@@ -226,7 +236,8 @@ export async function createIssue(request, response) {
     creator: request.user._id,
     assignee,
     labels: labels.map((label) => label.trim()).filter(Boolean),
-    dueDate
+    dueDate,
+    completedAt: status === "DONE" ? new Date() : null
   });
 
   await recordActivity({
@@ -293,6 +304,7 @@ export async function updateIssue(request, response) {
   const previousPriority = issue.priority;
   const previousAssignee = issue.assignee?.toString() ?? null;
   applyIssueFields(issue, request.body);
+  updateCompletedAt(issue, previousStatus);
   await issue.save();
 
   if (request.body.status !== undefined && previousStatus !== issue.status) {
@@ -379,6 +391,9 @@ async function updateSingleIssueField(request, response, field, allowedValues, l
 
   const previousValue = issue[field];
   issue[field] = value;
+  if (field === "status") {
+    updateCompletedAt(issue, previousValue);
+  }
   await issue.save();
 
   if (previousValue !== value) {

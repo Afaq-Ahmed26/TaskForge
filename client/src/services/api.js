@@ -187,6 +187,14 @@ export async function getProjectDashboard(token, projectId) {
   });
 }
 
+export async function getProjectAnalytics(token, projectId) {
+  return request(`/projects/${projectId}/analytics`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function getUsers(token) {
   return request("/users", {
     headers: {
