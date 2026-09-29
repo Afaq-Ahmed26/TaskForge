@@ -4,6 +4,7 @@ import authRoutes from "./routes/auth.routes.js";
 import commentRoutes from "./routes/comment.routes.js";
 import issueRoutes from "./routes/issue.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/projects", issueRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api", commentRoutes);
 app.use("/api/issues", activityRoutes);
+app.use("/api/users", userRoutes);
 
 app.use((_request, response) => {
   response.status(404).json({
