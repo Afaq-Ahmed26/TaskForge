@@ -6,8 +6,11 @@ import {
   loginUser,
   logoutUser,
   registerUser,
-  createProject
-  , createIssue,
+  createProject,
+  createIssue,
+  addIssueComment,
+  getIssueActivity,
+  getIssueComments,
   getProjectIssues,
   updateIssueStatus
 } from "./services/api.js";
@@ -35,6 +38,9 @@ function App() {
     description: "",
     priority: "MEDIUM"
   });
+  const [expandedIssueId, setExpandedIssueId] = useState(null);
+  const [issueDetails, setIssueDetails] = useState({});
+  const [commentDraft, setCommentDraft] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -144,42 +150,107 @@ function App() {
     } catch (error) {
       setProjectError(error.message);
     }
+  }
 
-    function updateIssueField(event) {
-      setNewIssue((currentIssue) => ({
-        ...currentIssue,
-        [event.target.name]: event.target.value
+  function updateIssueField(event) {
+    setNewIssue((currentIssue) => ({
+      ...currentIssue,
+      [event.target.name]: event.target.value
+    }));
+  }
+
+  async function submitIssue(event) {
+    event.preventDefault();
+    setIssueError("");
+
+    try {
+      const result = await createIssue(
+        user.token,
+        selectedProject._id,
+        newIssue
+      );
+      setIssues((currentIssues) => [result.data.issue, ...currentIssues]);
+      setNewIssue({ title: "", description: "", priority: "MEDIUM" });
+    } catch (error) {
+      setIssueError(error.message);
+    }
+  }
+
+  async function changeStatus(issueId, status) {
+    try {
+      const result = await updateIssueStatus(user.token, issueId, status);
+      setIssues((currentIssues) =>
+        currentIssues.map((issue) =>
+          issue._id === issueId ? result.data.issue : issue
+        )
+      );
+    } catch (error) {
+      setIssueError(error.message);
+    }
+  }
+
+  async function toggleIssueDetails(issueId) {
+    if (expandedIssueId === issueId) {
+      setExpandedIssueId(null);
+      return;
+    }
+
+    setIssueError("");
+    setExpandedIssueId(issueId);
+
+    try {
+      const [commentsResult, activityResult] = await Promise.all([
+        getIssueComments(user.token, issueId),
+        getIssueActivity(user.token, issueId)
+      ]);
+
+      setIssueDetails((currentDetails) => ({
+        ...currentDetails,
+        [issueId]: {
+          comments: commentsResult.data.comments,
+          activity: activityResult.data.activities
+        }
       }));
+    } catch (error) {
+      setIssueError(error.message);
+    }
+  }
+
+  async function submitComment(event, issueId) {
+    event.preventDefault();
+
+    if (!commentDraft.trim()) {
+      return;
     }
 
-    async function submitIssue(event) {
-      event.preventDefault();
-      setIssueError("");
-
-      try {
-        const result = await createIssue(
-          user.token,
-          selectedProject._id,
-          newIssue
-        );
-        setIssues((currentIssues) => [result.data.issue, ...currentIssues]);
-        setNewIssue({ title: "", description: "", priority: "MEDIUM" });
-      } catch (error) {
-        setIssueError(error.message);
-      }
-    }
-
-    async function changeStatus(issueId, status) {
-      try {
-        const result = await updateIssueStatus(user.token, issueId, status);
-        setIssues((currentIssues) =>
-          currentIssues.map((issue) =>
-            issue._id === issueId ? result.data.issue : issue
-          )
-        );
-      } catch (error) {
-        setIssueError(error.message);
-      }
+    try {
+      const result = await addIssueComment(
+        user.token,
+        issueId,
+        commentDraft.trim()
+      );
+      setIssueDetails((currentDetails) => ({
+        ...currentDetails,
+        [issueId]: {
+          ...currentDetails[issueId],
+          comments: [
+            ...(currentDetails[issueId]?.comments || []),
+            result.data.comment
+          ],
+          activity: [
+            ...(currentDetails[issueId]?.activity || []),
+            {
+              _id: `local-${Date.now()}`,
+              type: "COMMENT_ADDED",
+              actor: user,
+              createdAt: new Date().toISOString()
+            }
+          ]
+        }
+      }));
+      setCommentDraft("");
+    } catch (error) {
+      setIssueError(error.message);
     }
   }
 
@@ -333,6 +404,53 @@ function App() {
                                 <option value="IN_PROGRESS">In progress</option>
                                 <option value="DONE">Done</option>
                               </select>
+                              <button
+                                className="details-button"
+                                type="button"
+                                onClick={() => toggleIssueDetails(issue._id)}
+                              >
+                                {expandedIssueId === issue._id
+                                  ? "Hide details"
+                                  : "Comments & activity"}
+                              </button>
+                              {expandedIssueId === issue._id && (
+                                <div className="issue-details">
+                                  <h5>Comments</h5>
+                                  {issueDetails[issue._id]?.comments?.length ? (
+                                    issueDetails[issue._id].comments.map((comment) => (
+                                      <p className="comment" key={comment._id}>
+                                        <strong>{comment.author?.name}</strong>{" "}
+                                        {comment.text}
+                                      </p>
+                                    ))
+                                  ) : (
+                                    <p className="muted-text">No comments yet.</p>
+                                  )}
+                                  <form
+                                    className="comment-form"
+                                    onSubmit={(event) =>
+                                      submitComment(event, issue._id)
+                                    }
+                                  >
+                                    <input
+                                      value={commentDraft}
+                                      onChange={(event) =>
+                                        setCommentDraft(event.target.value)
+                                      }
+                                      placeholder="Add a comment"
+                                    />
+                                    <button className="primary-button" type="submit">
+                                      Comment
+                                    </button>
+                                  </form>
+                                  <h5>Activity</h5>
+                                  {issueDetails[issue._id]?.activity?.map((item) => (
+                                    <p className="activity-item" key={item._id}>
+                                      {item.type.replaceAll("_", " ").toLowerCase()}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
                             </article>
                           ))}
                       </div>

@@ -103,3 +103,29 @@ export async function updateIssueStatus(token, issueId, status) {
     body: JSON.stringify({ status })
   });
 }
+
+export async function getIssueComments(token, issueId) {
+  return request(`/issues/${issueId}/comments`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function addIssueComment(token, issueId, text) {
+  return request(`/issues/${issueId}/comments`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ text })
+  });
+}
+
+export async function getIssueActivity(token, issueId) {
+  return request(`/issues/${issueId}/activity`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}

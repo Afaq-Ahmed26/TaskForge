@@ -314,6 +314,60 @@ h1 {
   background: #111c35;
 }
 
+.details-button {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid #405275;
+  border-radius: 8px;
+  padding: 8px;
+  color: #c3cee2;
+  background: transparent;
+  cursor: pointer;
+}
+
+.issue-details {
+  margin-top: 14px;
+  border-top: 1px solid #2d3e61;
+  padding-top: 12px;
+}
+
+.issue-details h5 {
+  margin: 12px 0 8px;
+  color: #cbd7ed;
+}
+
+.comment,
+.activity-item {
+  margin: 6px 0;
+  color: #aebbd4;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.comment strong {
+  color: #e7edf7;
+}
+
+.comment-form {
+  display: flex;
+  gap: 6px;
+}
+
+.comment-form input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #405275;
+  border-radius: 8px;
+  padding: 8px;
+  color: #e7edf7;
+  background: #0d172d;
+}
+
+.comment-form .primary-button {
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
