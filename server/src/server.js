@@ -1,8 +1,18 @@
 import app from "./app.js";
+import { connectDatabase } from "./config/database.js";
+import { config } from "./config/env.js";
 
-const port = Number(process.env.PORT) || 5000;
+async function startServer() {
+  try {
+    await connectDatabase(config.mongoUri);
 
-app.listen(port, () => {
-  console.log(`TaskForge server listening on port ${port}`);
-});
+    app.listen(config.port, () => {
+      console.log(`TaskForge server listening on port ${config.port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start TaskForge server", error);
+    process.exitCode = 1;
+  }
+}
 
+startServer();
