@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+build/
+coverage/
+__pycache__/
+.pytest_cache/
+.venv/
+AGENTS.md
+API.md
+ARCHITECTURE.md
+DECISIONS.md
+LEARNING.md
+PRD.md
+TASKS.md
