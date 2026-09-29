@@ -296,6 +296,101 @@ h1 {
   margin: 8px 0 0;
 }
 
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.stat-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #2d3e61;
+  border-radius: 12px;
+  padding: 14px;
+  background: #0d172d;
+}
+
+.stat-card span {
+  color: #8e9db8;
+  font-size: 0.78rem;
+}
+
+.stat-card strong {
+  color: #e7edf7;
+  font-size: 1.5rem;
+}
+
+.members-panel {
+  margin-bottom: 22px;
+  border: 1px solid #2d3e61;
+  border-radius: 12px;
+  padding: 16px;
+  background: #0d172d;
+}
+
+.members-panel .section-heading {
+  margin-bottom: 14px;
+}
+
+.members-panel h3 {
+  margin: 0;
+  color: #cbd7ed;
+  font-size: 0.95rem;
+}
+
+.member-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.member-controls select {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #405275;
+  border-radius: 8px;
+  padding: 9px;
+  color: #e7edf7;
+  background: #111c35;
+}
+
+.member-controls .secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.member-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #233352;
+  padding-top: 8px;
+}
+
+.member-row span {
+  display: grid;
+  gap: 3px;
+}
+
+.member-row small {
+  color: #8e9db8;
+}
+
+.remove-button {
+  border: 0;
+  color: #ff9f9f;
+  background: transparent;
+  cursor: pointer;
+}
+
 .issue-form {
   display: grid;
   grid-template-columns: 1fr 1.4fr 140px auto;
@@ -460,7 +555,13 @@ h1 {
   }
 
   .issue-form,
-  .kanban-board {
+  .kanban-board,
+  .dashboard-stats {
     grid-template-columns: 1fr;
+  }
+
+  .member-controls {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

@@ -11,7 +11,11 @@ import {
   addIssueComment,
   getIssueActivity,
   getIssueComments,
+  getProjectDashboard,
   getProjectIssues,
+  getUsers,
+  addProjectMember,
+  removeProjectMember,
   updateIssueStatus
 } from "./services/api.js";
 import "./styles.css";
@@ -33,6 +37,10 @@ function App() {
   const [issues, setIssues] = useState([]);
   const [issueError, setIssueError] = useState("");
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
+  const [dashboard, setDashboard] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [memberError, setMemberError] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [newIssue, setNewIssue] = useState({
     title: "",
     description: "",
@@ -74,14 +82,30 @@ function App() {
   }, [user]);
 
   useEffect(() => {
+    if (!user?.token) {
+      return;
+    }
+
+    getUsers(user.token)
+      .then((result) => setUsers(result.data.users))
+      .catch((error) => setMemberError(error.message));
+  }, [user]);
+
+  useEffect(() => {
     if (!user?.token || !selectedProject) {
       return;
     }
 
     setIsLoadingIssues(true);
     setIssueError("");
-    getProjectIssues(user.token, selectedProject._id)
-      .then((result) => setIssues(result.data.issues))
+    Promise.all([
+      getProjectIssues(user.token, selectedProject._id),
+      getProjectDashboard(user.token, selectedProject._id)
+    ])
+      .then(([issuesResult, dashboardResult]) => {
+        setIssues(issuesResult.data.issues);
+        setDashboard(dashboardResult.data);
+      })
       .catch((error) => setIssueError(error.message))
       .finally(() => setIsLoadingIssues(false));
   }, [user, selectedProject]);
@@ -130,6 +154,8 @@ function App() {
     setProjects([]);
     setSelectedProject(null);
     setIssues([]);
+    setDashboard(null);
+    setSelectedMemberId("");
   }
 
   function updateProjectField(event) {
@@ -221,6 +247,57 @@ function App() {
 
     if (!commentDraft.trim()) {
       return;
+    }
+
+    async function addMember() {
+      if (!selectedProject || !selectedMemberId) {
+        return;
+      }
+
+      setMemberError("");
+
+      try {
+        const result = await addProjectMember(
+          user.token,
+          selectedProject._id,
+          selectedMemberId
+        );
+        const updatedProject = result.data.project;
+        setProjects((currentProjects) =>
+          currentProjects.map((project) =>
+            project._id === updatedProject._id ? updatedProject : project
+          )
+        );
+        setSelectedProject(updatedProject);
+        setSelectedMemberId("");
+      } catch (error) {
+        setMemberError(error.message);
+      }
+    }
+
+    async function removeMember(userId) {
+      if (!selectedProject) {
+        return;
+      }
+
+      setMemberError("");
+
+      try {
+        const result = await removeProjectMember(
+          user.token,
+          selectedProject._id,
+          userId
+        );
+        const updatedProject = result.data.project;
+        setProjects((currentProjects) =>
+          currentProjects.map((project) =>
+            project._id === updatedProject._id ? updatedProject : project
+          )
+        );
+        setSelectedProject(updatedProject);
+      } catch (error) {
+        setMemberError(error.message);
+      }
     }
 
     try {
@@ -340,6 +417,80 @@ function App() {
                   Close
                 </button>
               </header>
+              {dashboard && (
+                <div className="dashboard-stats">
+                  <div className="stat-card">
+                    <span>Total issues</span>
+                    <strong>{dashboard.totalIssues}</strong>
+                  </div>
+                  <div className="stat-card">
+                    <span>Completed</span>
+                    <strong>{dashboard.completedIssues}</strong>
+                  </div>
+                  <div className="stat-card">
+                    <span>Completion rate</span>
+                    <strong>{dashboard.completionRate}%</strong>
+                  </div>
+                  <div className="stat-card">
+                    <span>Overdue</span>
+                    <strong>{dashboard.overdueIssues}</strong>
+                  </div>
+                </div>
+              )}
+              <section className="members-panel">
+                <div className="section-heading">
+                  <h3>Project members</h3>
+                  <span>{selectedProject.members?.length || 0}</span>
+                </div>
+                <div className="member-controls">
+                  <select
+                    value={selectedMemberId}
+                    onChange={(event) => setSelectedMemberId(event.target.value)}
+                  >
+                    <option value="">Select a user</option>
+                    {users
+                      .filter(
+                        (candidate) =>
+                          !selectedProject.members?.some(
+                            (member) => member._id === candidate._id
+                          )
+                      )
+                      .map((candidate) => (
+                        <option value={candidate._id} key={candidate._id}>
+                          {candidate.name} ({candidate.email})
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={addMember}
+                    disabled={!selectedMemberId}
+                  >
+                    Add member
+                  </button>
+                </div>
+                {memberError && <p className="form-error">{memberError}</p>}
+                <div className="member-list">
+                  {selectedProject.members?.map((member) => (
+                    <div className="member-row" key={member._id}>
+                      <span>
+                        <strong>{member.name}</strong>
+                        <small>{member.email}</small>
+                      </span>
+                      {member._id !== selectedProject.owner?._id && (
+                        <button
+                          className="remove-button"
+                          type="button"
+                          onClick={() => removeMember(member._id)}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
               <form className="issue-form" onSubmit={submitIssue}>
                 <input
                   name="title"

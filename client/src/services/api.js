@@ -129,3 +129,38 @@ export async function getIssueActivity(token, issueId) {
     }
   });
 }
+
+export async function getProjectDashboard(token, projectId) {
+  return request(`/projects/${projectId}/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function getUsers(token) {
+  return request("/users", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function addProjectMember(token, projectId, userId) {
+  return request(`/projects/${projectId}/members`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ userId })
+  });
+}
+
+export async function removeProjectMember(token, projectId, userId) {
+  return request(`/projects/${projectId}/members/${userId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
