@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Issue } from "../models/issue.model.js";
 import { Project } from "../models/project.model.js";
+import { recordActivity } from "../services/activity.service.js";
 
 const statuses = new Set(["TODO", "IN_PROGRESS", "DONE"]);
 const priorities = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
@@ -225,6 +226,11 @@ export async function createIssue(request, response) {
     dueDate
   });
 
+  await recordActivity({
+    issue: issue._id,
+    actor: request.user._id,
+    type: "ISSUE_CREATED"
+  });
   await populateIssue(issue);
 
   return response.status(201).json({
@@ -280,8 +286,42 @@ export async function updateIssue(request, response) {
     });
   }
 
+  const previousStatus = issue.status;
+  const previousPriority = issue.priority;
+  const previousAssignee = issue.assignee?.toString() ?? null;
   applyIssueFields(issue, request.body);
   await issue.save();
+
+  if (request.body.status !== undefined && previousStatus !== issue.status) {
+    await recordActivity({
+      issue: issue._id,
+      actor: request.user._id,
+      type: "STATUS_CHANGED",
+      details: { from: previousStatus, to: issue.status }
+    });
+  }
+
+  if (request.body.priority !== undefined && previousPriority !== issue.priority) {
+    await recordActivity({
+      issue: issue._id,
+      actor: request.user._id,
+      type: "PRIORITY_CHANGED",
+      details: { from: previousPriority, to: issue.priority }
+    });
+  }
+
+  if (
+    request.body.assignee !== undefined &&
+    previousAssignee !== (issue.assignee?.toString() ?? null)
+  ) {
+    await recordActivity({
+      issue: issue._id,
+      actor: request.user._id,
+      type: "ASSIGNED",
+      details: { from: previousAssignee, to: issue.assignee }
+    });
+  }
+
   await populateIssue(issue);
 
   return response.status(200).json({
@@ -334,8 +374,19 @@ async function updateSingleIssueField(request, response, field, allowedValues, l
     });
   }
 
+  const previousValue = issue[field];
   issue[field] = value;
   await issue.save();
+
+  if (previousValue !== value) {
+    await recordActivity({
+      issue: issue._id,
+      actor: request.user._id,
+      type: field === "status" ? "STATUS_CHANGED" : "PRIORITY_CHANGED",
+      details: { from: previousValue, to: value }
+    });
+  }
+
   await populateIssue(issue);
 
   return response.status(200).json({
