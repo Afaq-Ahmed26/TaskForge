@@ -9,6 +9,7 @@ TaskForge is a learning-focused project and issue-management application inspire
 - Express
 - MongoDB
 - Docker Compose
+- Python + FastAPI analytics service
 
 The main application flow is:
 
@@ -74,6 +75,7 @@ Services:
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:5000`
 - MongoDB: `127.0.0.1:27017`
+- Analytics: `http://localhost:8000`
 
 The Compose configuration intentionally uses `mongo:4.4`. Do not upgrade it to MongoDB 5.0 or newer on this machine.
 
