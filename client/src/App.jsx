@@ -16,7 +16,9 @@ import {
   getUsers,
   addProjectMember,
   removeProjectMember,
-  updateIssueStatus
+  updateIssueStatus,
+  updateIssuePriority,
+  deleteIssue
 } from "./services/api.js";
 import "./styles.css";
 
@@ -45,6 +47,12 @@ function App() {
     title: "",
     description: "",
     priority: "MEDIUM"
+  });
+  const [issueFilters, setIssueFilters] = useState({
+    search: "",
+    status: "",
+    priority: "",
+    label: ""
   });
   const [expandedIssueId, setExpandedIssueId] = useState(null);
   const [issueDetails, setIssueDetails] = useState({});
@@ -99,7 +107,7 @@ function App() {
     setIsLoadingIssues(true);
     setIssueError("");
     Promise.all([
-      getProjectIssues(user.token, selectedProject._id),
+      getProjectIssues(user.token, selectedProject._id, issueFilters),
       getProjectDashboard(user.token, selectedProject._id)
     ])
       .then(([issuesResult, dashboardResult]) => {
@@ -108,7 +116,7 @@ function App() {
       })
       .catch((error) => setIssueError(error.message))
       .finally(() => setIsLoadingIssues(false));
-  }, [user, selectedProject]);
+  }, [user, selectedProject, issueFilters]);
 
   function updateField(event) {
     setForm((currentForm) => ({
@@ -212,6 +220,41 @@ function App() {
       );
     } catch (error) {
       setIssueError(error.message);
+    }
+
+    async function changePriority(issueId, priority) {
+      try {
+        const result = await updateIssuePriority(user.token, issueId, priority);
+        setIssues((currentIssues) =>
+          currentIssues.map((issue) =>
+            issue._id === issueId ? result.data.issue : issue
+          )
+        );
+      } catch (error) {
+        setIssueError(error.message);
+      }
+    }
+
+    async function removeIssue(issueId) {
+      if (!window.confirm("Delete this issue?")) {
+        return;
+      }
+
+      try {
+        await deleteIssue(user.token, issueId);
+        setIssues((currentIssues) =>
+          currentIssues.filter((issue) => issue._id !== issueId)
+        );
+      } catch (error) {
+        setIssueError(error.message);
+      }
+    }
+
+    function updateIssueFilter(event) {
+      setIssueFilters((currentFilters) => ({
+        ...currentFilters,
+        [event.target.name]: event.target.value
+      }));
     }
   }
 
@@ -520,6 +563,41 @@ function App() {
                   Add issue
                 </button>
               </form>
+              <div className="issue-filters">
+                <input
+                  name="search"
+                  placeholder="Search title or description"
+                  value={issueFilters.search}
+                  onChange={updateIssueFilter}
+                />
+                <select
+                  name="status"
+                  value={issueFilters.status}
+                  onChange={updateIssueFilter}
+                >
+                  <option value="">All statuses</option>
+                  <option value="TODO">Todo</option>
+                  <option value="IN_PROGRESS">In progress</option>
+                  <option value="DONE">Done</option>
+                </select>
+                <select
+                  name="priority"
+                  value={issueFilters.priority}
+                  onChange={updateIssueFilter}
+                >
+                  <option value="">All priorities</option>
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
+                </select>
+                <input
+                  name="label"
+                  placeholder="Label"
+                  value={issueFilters.label}
+                  onChange={updateIssueFilter}
+                />
+              </div>
               {issueError && <p className="form-error">{issueError}</p>}
               {isLoadingIssues ? (
                 <p className="muted-text">Loading issues...</p>
@@ -555,6 +633,24 @@ function App() {
                                 <option value="IN_PROGRESS">In progress</option>
                                 <option value="DONE">Done</option>
                               </select>
+                              <select
+                                value={issue.priority}
+                                onChange={(event) =>
+                                  changePriority(issue._id, event.target.value)
+                                }
+                              >
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="URGENT">Urgent</option>
+                              </select>
+                              <button
+                                className="remove-button issue-delete"
+                                type="button"
+                                onClick={() => removeIssue(issue._id)}
+                              >
+                                Delete issue
+                              </button>
                               <button
                                 className="details-button"
                                 type="button"

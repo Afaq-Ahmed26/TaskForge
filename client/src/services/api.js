@@ -104,6 +104,25 @@ export async function updateIssueStatus(token, issueId, status) {
   });
 }
 
+export async function updateIssuePriority(token, issueId, priority) {
+  return request(`/issues/${issueId}/priority`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ priority })
+  });
+}
+
+export async function deleteIssue(token, issueId) {
+  return request(`/issues/${issueId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function getIssueComments(token, issueId) {
   return request(`/issues/${issueId}/comments`, {
     headers: {

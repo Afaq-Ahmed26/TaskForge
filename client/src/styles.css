@@ -103,6 +103,13 @@ h1 {
   cursor: pointer;
 }
 
+.issue-delete {
+  margin-top: 8px;
+  padding: 0;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
 .tab + .tab {
   margin-left: 16px;
 }
@@ -131,6 +138,19 @@ h1 {
   padding: 12px 14px;
   color: #e7edf7;
   background: #111c35;
+}
+
+.issue-filters {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(2, 1fr) 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.issue-filters input,
+.issue-filters select {
+  min-width: 0;
+  padding: 10px 12px;
 }
 
 .auth-form input:focus {
@@ -400,7 +420,9 @@ h1 {
 
 .issue-form input,
 .issue-form select,
-.issue-card select {
+.issue-card select,
+.issue-filters input,
+.issue-filters select {
   min-width: 0;
   border: 1px solid #405275;
   border-radius: 10px;
@@ -556,7 +578,8 @@ h1 {
 
   .issue-form,
   .kanban-board,
-  .dashboard-stats {
+  .dashboard-stats,
+  .issue-filters {
     grid-template-columns: 1fr;
   }
 
