@@ -38,9 +38,12 @@ async function findOwnedComment(commentId, userId) {
 }
 
 async function populateComment(comment) {
-  return comment
-    .populate("author", "_id name email")
-    .populate("issue", "_id title project");
+  await comment.populate([
+    { path: "author", select: "_id name email" },
+    { path: "issue", select: "_id title project" }
+  ]);
+
+  return comment;
 }
 
 export async function listComments(request, response) {
@@ -158,4 +161,3 @@ export async function deleteComment(request, response) {
     message: "Comment deleted"
   });
 }
-

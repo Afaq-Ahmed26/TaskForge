@@ -9,13 +9,6 @@ const app = express();
 
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/projects", projectRoutes);
-app.use("/api/projects", issueRoutes);
-app.use("/api/issues", issueRoutes);
-app.use("/api", commentRoutes);
-app.use("/api/issues", activityRoutes);
-
 app.get("/api/health", (_request, response) => {
   response.status(200).json({
     success: true,
@@ -25,6 +18,13 @@ app.get("/api/health", (_request, response) => {
     }
   });
 });
+
+app.use("/api/auth", authRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/projects", issueRoutes);
+app.use("/api/issues", issueRoutes);
+app.use("/api", commentRoutes);
+app.use("/api/issues", activityRoutes);
 
 app.use((_request, response) => {
   response.status(404).json({

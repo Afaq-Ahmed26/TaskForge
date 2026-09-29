@@ -24,17 +24,17 @@ function isProjectMember(project, userId) {
   );
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isAllowedAssignee(project, assignee) {
+  return assignee === null || isProjectMember(project, assignee);
+}
+
 async function findAccessibleProject(projectId, userId) {
   if (!isValidId(projectId)) {
     return null;
-  }
-
-  function escapeRegex(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  function isAllowedAssignee(project, assignee) {
-    return assignee === null || isProjectMember(project, assignee);
   }
 
   const project = await Project.findById(projectId).select("owner members");
@@ -103,10 +103,13 @@ function applyIssueFields(issue, body) {
 }
 
 async function populateIssue(issue) {
-  return issue
-    .populate("project", "name owner members")
-    .populate("creator", "_id name email")
-    .populate("assignee", "_id name email");
+  await issue.populate([
+    { path: "project", select: "name owner members" },
+    { path: "creator", select: "_id name email" },
+    { path: "assignee", select: "_id name email" }
+  ]);
+
+  return issue;
 }
 
 export async function listProjectIssues(request, response) {
