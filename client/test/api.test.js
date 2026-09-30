@@ -32,7 +32,7 @@ test("loginUser sends credentials to the login endpoint", async () => {
     password: "Password123!"
   });
 
-  assert.equal(capturedRequest.url, "http://localhost:5000/api/auth/login");
+  assert.equal(capturedRequest.url, "/api/auth/login");
   assert.equal(capturedRequest.options.method, "POST");
   assert.equal(capturedRequest.options.headers["Content-Type"], "application/json");
   assert.deepEqual(JSON.parse(capturedRequest.options.body), {
@@ -60,7 +60,7 @@ test("getProjectIssues includes filters and bearer authentication", async () => 
 
   assert.equal(
     capturedRequest.url,
-    "http://localhost:5000/api/projects/project-id/issues?search=login+UI&status=TODO"
+    "/api/projects/project-id/issues?search=login+UI&status=TODO"
   );
   assert.equal(
     capturedRequest.options.headers.Authorization,
@@ -110,7 +110,7 @@ test("getProjectAnalytics requests Node analytics with bearer authentication", a
 
   assert.equal(
     capturedRequest.url,
-    "http://localhost:5000/api/projects/project-id/analytics"
+    "/api/projects/project-id/analytics"
   );
   assert.equal(
     capturedRequest.options.headers.Authorization,
