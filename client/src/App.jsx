@@ -214,63 +214,64 @@ function App() {
       setProjectError(error.message);
     }
 
-    function startProjectEdit() {
+  }
+
+  function startProjectEdit() {
       setNewProject({
         name: selectedProject.name,
         description: selectedProject.description || ""
       });
       setEditingProject(true);
       setProjectError("");
-    }
+  }
 
-    function cancelProjectEdit() {
+  function cancelProjectEdit() {
       setEditingProject(false);
       setNewProject({ name: "", description: "" });
       setProjectError("");
+  }
+
+  async function saveProject(event) {
+    event.preventDefault();
+    setProjectError("");
+
+    try {
+      const result = await updateProject(
+        user.token,
+        selectedProject._id,
+        newProject
+      );
+      const updatedProject = {
+        ...selectedProject,
+        ...result.data.project
+      };
+      setProjects((currentProjects) =>
+        currentProjects.map((project) =>
+          project._id === updatedProject._id ? updatedProject : project
+        )
+      );
+      setSelectedProject(updatedProject);
+      cancelProjectEdit();
+    } catch (error) {
+      setProjectError(error.message);
+    }
+  }
+
+  async function removeProject() {
+    if (!window.confirm("Delete this project and its access?")) {
+      return;
     }
 
-    async function saveProject(event) {
-      event.preventDefault();
-      setProjectError("");
-
-      try {
-        const result = await updateProject(
-          user.token,
-          selectedProject._id,
-          newProject
-        );
-        const updatedProject = {
-          ...selectedProject,
-          ...result.data.project
-        };
-        setProjects((currentProjects) =>
-          currentProjects.map((project) =>
-            project._id === updatedProject._id ? updatedProject : project
-          )
-        );
-        setSelectedProject(updatedProject);
-        cancelProjectEdit();
-      } catch (error) {
-        setProjectError(error.message);
-      }
-    }
-
-    async function removeProject() {
-      if (!window.confirm("Delete this project and its access?")) {
-        return;
-      }
-
-      try {
-        await deleteProject(user.token, selectedProject._id);
-        setProjects((currentProjects) =>
-          currentProjects.filter((project) => project._id !== selectedProject._id)
-        );
-        setSelectedProject(null);
-        setIssues([]);
-        setDashboard(null);
-      } catch (error) {
-        setProjectError(error.message);
-      }
+    try {
+      await deleteProject(user.token, selectedProject._id);
+      setProjects((currentProjects) =>
+        currentProjects.filter((project) => project._id !== selectedProject._id)
+      );
+      setSelectedProject(null);
+      setIssues([]);
+      setDashboard(null);
+    } catch (error) {
+      setProjectError(error.message);
     }
   }
 

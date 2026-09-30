@@ -67,6 +67,16 @@ npm run dev
 
 The frontend is available at `http://localhost:5173`.
 
+## FastAPI Analytics Service
+
+When running the backend and frontend directly on the host machine, the FastAPI analytics service must be started separately.
+
+From the project root:
+
+```bash
+cd ~/Desktop/Todo
+python3 -m uvicorn analytics.app:app --host 127.0.0.1 --port 8000
+
 ## Docker Compose
 
 Set a JWT secret in the shell without committing it:
